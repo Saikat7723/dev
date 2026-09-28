@@ -24,11 +24,11 @@ export const MainLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+    <div className="min-h-dvh bg-slate-950 text-slate-100 flex overflow-hidden">
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
-      <div className="flex-1 md:ml-64 flex flex-col min-w-0">
+      <div className="flex-1 md:ml-64 flex min-w-0 flex-col">
         <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 md:p-6">
           <Outlet />
         </main>
       </div>

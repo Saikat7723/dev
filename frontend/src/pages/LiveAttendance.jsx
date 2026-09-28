@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Webcam from 'react-webcam';
-import { Camera, CheckCircle2, ShieldCheck, Activity, Users, UserCheck, AlertCircle, RefreshCw } from 'lucide-react';
+import { Camera, CheckCircle2, UserCheck } from 'lucide-react';
 import apiClient from '../api/axios';
 
 export const LiveAttendance = () => {
@@ -25,7 +25,64 @@ export const LiveAttendance = () => {
 
   const [recentEvents, setRecentEvents] = useState([]);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [completionNotice, setCompletionNotice] = useState(null);
   const webcamRef = useRef(null);
+  const completionTimerRef = useRef(null);
+
+  const playAttendanceConfirmedSound = () => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const context = new AudioContext();
+      const now = context.currentTime;
+
+      [659.25, 783.99].forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(frequency, now + index * 0.14);
+        gain.gain.setValueAtTime(0.0001, now + index * 0.14);
+        gain.gain.exponentialRampToValueAtTime(0.12, now + index * 0.14 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.14 + 0.22);
+        oscillator.connect(gain).connect(context.destination);
+        oscillator.start(now + index * 0.14);
+        oscillator.stop(now + index * 0.14 + 0.24);
+      });
+
+      window.setTimeout(() => context.close(), 550);
+    } catch (error) {
+      // Audio can be unavailable or blocked by browser/device settings.
+      console.warn('Attendance confirmation sound could not be played.', error);
+    }
+  };
+
+  const showAttendanceCompleted = (result) => {
+    const student = result.student;
+    const action = result.action === 'CHECK_OUT' ? 'checked out' : 'checked in';
+    const displayName = student?.full_name || 'Student';
+
+    setCompletionNotice({
+      title: 'Attendance completed',
+      message: result.message || `${displayName} was ${action} successfully.`,
+      action: result.action
+    });
+    playAttendanceConfirmedSound();
+
+    if (student) {
+      setLastRecognizedStudent({
+        id: student.id,
+        student_id: student.student_id,
+        full_name: student.full_name,
+        email: student.email || '',
+        profile_photo_path: student.photo || student.profile_photo_path || null,
+        confidence: result.confidence || 0.94,
+        timestamp: result.timestamp ? new Date(result.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString(),
+        action: result.action
+      });
+    }
+
+    window.clearTimeout(completionTimerRef.current);
+    completionTimerRef.current = window.setTimeout(() => setCompletionNotice(null), 5000);
+  };
 
   const fetchRecentEvents = async () => {
     try {
@@ -55,6 +112,8 @@ export const LiveAttendance = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => () => window.clearTimeout(completionTimerRef.current), []);
+
   // Trigger test face recognition check-in simulation
   const handleSimulateCheckin = async () => {
     setIsSimulating(true);
@@ -65,6 +124,9 @@ export const LiveAttendance = () => {
         confidence: 0.94,
         camera_id: 'CAM-MAIN-ENTRANCE-01'
       });
+      if (res.data?.success && ['CHECK_IN', 'CHECK_OUT'].includes(res.data.action)) {
+        showAttendanceCompleted(res.data);
+      }
       fetchRecentEvents();
     } catch (err) {
       console.error(err);
@@ -90,7 +152,7 @@ export const LiveAttendance = () => {
             className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2 disabled:opacity-50"
           >
             <UserCheck className="w-4 h-4" />
-            Simulate Entrance Camera Match
+            {isSimulating ? 'Recording attendance...' : 'Simulate Entrance Camera Match'}
           </button>
         </div>
       </div>
@@ -134,6 +196,19 @@ export const LiveAttendance = () => {
                   </div>
                 </div>
               </div>
+
+              {completionNotice && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-emerald-950/55 p-4 backdrop-blur-sm" role="status" aria-live="assertive">
+                  <div className="max-w-sm rounded-2xl border border-emerald-300/50 bg-emerald-500/15 p-5 text-center shadow-2xl shadow-emerald-950/70">
+                    <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-emerald-300" />
+                    <p className="text-lg font-bold text-white">{completionNotice.title}</p>
+                    <p className="mt-1 text-sm text-emerald-100">{completionNotice.message}</p>
+                    <span className="mt-3 inline-block rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-bold tracking-wide text-emerald-100">
+                      {completionNotice.action === 'CHECK_OUT' ? 'CHECK-OUT CONFIRMED' : 'CHECK-IN CONFIRMED'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

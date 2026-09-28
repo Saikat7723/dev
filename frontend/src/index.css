@@ -5,6 +5,12 @@
 @layer base {
   body {
     @apply bg-slate-950 text-slate-100 antialiased;
+    min-width: 320px;
+    overflow-x: hidden;
+  }
+
+  #root {
+    min-height: 100dvh;
   }
 }
 

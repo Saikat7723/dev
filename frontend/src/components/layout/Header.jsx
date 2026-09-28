@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Camera, Bell, Search, User } from 'lucide-react';
+import { Menu, Camera } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const Header = ({ onToggleSidebar }) => {
@@ -9,7 +9,9 @@ export const Header = ({ onToggleSidebar }) => {
     <header className="sticky top-0 z-30 h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 md:px-6 flex items-center justify-between">
       <div className="flex items-center gap-4">
         <button
+          type="button"
           onClick={onToggleSidebar}
+          aria-label="Open navigation menu"
           className="p-2 text-slate-400 hover:text-slate-100 md:hidden rounded-lg hover:bg-slate-800"
         >
           <Menu className="w-5 h-5" />
@@ -36,9 +38,9 @@ export const Header = ({ onToggleSidebar }) => {
           <div className="w-8 h-8 rounded-full bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-xs">
             {user?.full_name ? user.full_name.charAt(0) : 'A'}
           </div>
-          <div className="hidden md:block text-left">
-            <p className="text-xs font-semibold text-slate-200">{user?.full_name}</p>
-            <p className="text-[10px] text-slate-400 capitalize">{user?.role}</p>
+          <div className="hidden min-w-0 md:block text-left">
+            <p className="truncate text-xs font-semibold text-slate-200">{user?.full_name || 'Admin User'}</p>
+            <p className="text-[10px] text-slate-400 capitalize">{user?.role || 'Admin'}</p>
           </div>
         </div>
       </div>

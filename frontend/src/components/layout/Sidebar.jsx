@@ -34,13 +34,23 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
   ];
 
   return (
-    <aside
-      className={`fixed top-0 left-0 z-40 w-64 h-screen transition-transform duration-300 ease-in-out bg-slate-900 border-r border-slate-800/80 flex flex-col ${
-        isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      }`}
-    >
+    <>
+      <button
+        type="button"
+        aria-label="Close navigation menu"
+        onClick={() => setIsOpen(false)}
+        className={`fixed inset-0 z-30 cursor-default bg-slate-950/65 backdrop-blur-sm transition-opacity md:hidden ${
+          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      />
+      <aside
+        aria-label="Primary navigation"
+        className={`fixed inset-y-0 left-0 z-40 flex h-dvh w-72 max-w-[85vw] flex-col border-r border-slate-800/80 bg-slate-900 shadow-2xl shadow-slate-950/50 transition-transform duration-300 ease-in-out md:w-64 md:max-w-none md:shadow-none ${
+          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
       {/* Brand Header */}
-      <div className="h-16 px-6 flex items-center gap-3 border-b border-slate-800">
+      <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-5 md:px-6">
         <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/30">
           <BookOpen className="w-5 h-5" />
         </div>
@@ -51,7 +61,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
       </div>
 
       {/* Navigation Menu */}
-      <div className="flex-1 py-4 px-3 overflow-y-auto space-y-1">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -76,7 +86,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
             )}
           </NavLink>
         ))}
-      </div>
+      </nav>
 
       {/* User Footer */}
       <div className="p-4 border-t border-slate-800 bg-slate-900/50">
@@ -102,6 +112,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
           </button>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 };
