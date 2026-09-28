@@ -1,0 +1,69 @@
+import os
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from app.core.config import settings
+from app.database.session import engine, Base
+from app.api.auth import router as auth_router
+from app.api.students import router as student_router
+from app.api.attendance import router as attendance_router
+from app.api.books import router as book_router
+from app.api.book_issues import router as book_issue_router
+from app.api.dashboard import router as dashboard_router
+from app.api.admin import router as admin_router
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# CORS Middleware configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # In production, restrict to trusted frontend URLs
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static uploads directory for profile photos
+os.makedirs(settings.PROFILES_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIRECTORY), name="uploads")
+
+# Include Routers
+app.include_router(auth_router, prefix=settings.API_V1_STR)
+app.include_router(student_router, prefix=settings.API_V1_STR)
+app.include_router(attendance_router, prefix=settings.API_V1_STR)
+app.include_router(book_router, prefix=settings.API_V1_STR)
+app.include_router(book_issue_router, prefix=settings.API_V1_STR)
+app.include_router(dashboard_router, prefix=settings.API_V1_STR)
+app.include_router(admin_router, prefix=settings.API_V1_STR)
+
+@app.on_event("startup")
+def startup_event():
+    # Ensure database tables exist
+    Base.metadata.create_all(bind=engine)
+
+@app.get("/")
+def root():
+    return {
+        "status": "online",
+        "system": settings.PROJECT_NAME,
+        "docs": "/docs",
+        "version": "1.0.0"
+    }
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "success": False,
+            "message": f"Internal Server Error: {str(exc)}",
+            "error_code": "INTERNAL_SERVER_ERROR"
+        }
+    )
